@@ -1,0 +1,38 @@
+{
+  "name": "@midwayjs/luckyeye",
+  "version": "0.0.1",
+  "description": "check node.js application",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "bin": {
+    "luckyeye": "bin/luckyeye"
+  },
+  "files": [
+    "bin",
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
+  ],
+  "scripts": {
+    "test": "midway-bin test --ts",
+    "cov": "midway-bin cov --ts",
+    "build": "midway-bin build -c"
+  },
+  "author": "czy88840616@gmail.com",
+  "license": "MIT",
+  "dependencies": {
+    "find-root": "^1.1.0",
+    "ms": "^2.1.1",
+    "queue": "^6.0.0",
+    "supports-color": "^8.1.0"
+  },
+  "engines": {
+    "node": ">= 12.0.0"
+  },
+  "devDependencies": {
+    "@midwayjs/cli": "^1.0.0",
+    "@types/jest": "^26.0.10",
+    "@types/node": "^10.17.21",
+    "mwts": "^1.0.5",
+    "typescript": "^4.1.0"
+  }
+}

@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+"use strict";
+
+const { RunnerContainer, ConsoleReporter, baseCheck, checkV2 } = require('../dist/');
+
+const container = new RunnerContainer();
+container.registerReport(new ConsoleReporter());
+container.addRule(baseCheck);
+container.addRule(checkV2);
