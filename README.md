@@ -81,7 +81,7 @@ runner 包括几个通用的输出接口
 - warn(title: string, () => {}) : Promise \<Array[result: boolean, warnMessage: string]>
 - skipWhen(() => {}): Promise \<result: boolean> 返回true，则整段跳过执行，类似 xdescribe
 
-接口很简单，看 /src/rule 目录下的例子就好
+接口很简单，看 /src/rule 目录下的例子就好。
 
 如果要发布为 npm 包，需要导出包含 rules 属性的规则数组。
 
