@@ -1,6 +1,6 @@
 {
   "name": "@midwayjs/luckyeye",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "check node.js application",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
