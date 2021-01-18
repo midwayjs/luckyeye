@@ -1,22 +1,7 @@
 import { join } from 'path';
+import { Runner } from '..';
 
-function checkoutAndOutputVersion(name) {
-  try {
-    return [require(`${name}/package`).version] 
-  } catch(err) {
-  }
-  return ['?']
-}
-
-function checkoutMultiplePkg(baseDir, name) {
-  try {
-    return [require(`${name}/package`).version] 
-  } catch(err) {
-  }
-  return ['?']
-}
-
-export const checkV2 = (runner) => {
+export const checkV2 = (runner: Runner) => {
 
   runner
     .group('Midway v2 check')
@@ -32,21 +17,25 @@ export const checkV2 = (runner) => {
       return true;
     })
     .info('midway decorator version', async () => {
-      return [checkoutAndOutputVersion('@midwayjs/decorator')]
+      return [runner.utils.getPackageVersion('@midwayjs/decorator')]
     })
     .info('midway core version', async () => {
-      return [checkoutAndOutputVersion('@midwayjs/core')]
+      return [runner.utils.getPackageVersion('@midwayjs/core')]
     })
     .info('midway logger version', async () => {
-      return [checkoutAndOutputVersion('@midwayjs/logger')]
+      return [runner.utils.getPackageVersion('@midwayjs/logger')]
     })
     .info('midway mock version', async () => {
-      return [checkoutAndOutputVersion('@midwayjs/mock')]
+      return [runner.utils.getPackageVersion('@midwayjs/mock')]
     })
     .info('midway web version', async () => {
-      return [checkoutAndOutputVersion('@midwayjs/web')]
+      return [runner.utils.getPackageVersion('@midwayjs/web')]
     })
     .check('multiple decorator', async () => {
       return [false, '']
     });
 };
+
+exports.rules = [
+  checkV2,
+]

@@ -13,3 +13,7 @@ export const baseCheck = (runner) => {
       }
     });
 };
+
+exports.rules = [
+  baseCheck,
+]

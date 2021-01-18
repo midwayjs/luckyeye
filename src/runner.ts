@@ -1,5 +1,6 @@
 import queue from 'queue';
 import { EventEmitter } from 'events';
+import { getPackageVersion } from './util';
 
 const q = queue({
   timeout: 100,
@@ -10,6 +11,11 @@ const q = queue({
 const SLOW = 75;
 
 const mc = new EventEmitter();
+
+const inner = {
+  'base': require('./rule/base'),
+  'midway_v2': require('./rule/app'),
+}
 
 export class RunnerContainer {
 
@@ -48,6 +54,37 @@ export class RunnerContainer {
     });
   }
 
+  loadRulePackage() {
+    let packages = ['base'];
+    try {
+      const pkg = require(`${process.cwd()}/package.json`);
+      packages = packages.concat(pkg['midway-luckyeye']['packages']);
+    } catch (err) {
+    }
+
+    if (packages.length) {
+      for (const p of packages) {
+        let ruleModule;
+        if(p.indexOf(':') !== -1) {
+          // 现在之后 npm
+          ruleModule = require(p.split(':')[1]);
+        } else if(inner[p]) {
+          ruleModule = inner[p];
+        }
+  
+        if (ruleModule['rules']) {
+          for (const rule of ruleModule['rules']) {
+            this.addRule(rule);
+          }
+        } else if(typeof ruleModule === 'function') {
+          this.addRule(ruleModule);
+        } else {
+          console.log('not found rule and skip');
+        }
+      }
+    }
+  }
+
   registerReport(reporter) {
     this.reporters.push(reporter);
     reporter.reportStart();
@@ -72,10 +109,13 @@ function isSlow(test) {
   }
 }
 
-class Runner {
+export class Runner {
 
   skip = false;
   innerGroup;
+  utils = {
+    getPackageVersion: getPackageVersion,
+  }
 
   getGroup() {
     return this.innerGroup;
@@ -231,3 +271,4 @@ class Runner {
   }
 
 }
+

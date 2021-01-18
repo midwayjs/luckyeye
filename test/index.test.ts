@@ -1,5 +1,7 @@
 import { ConsoleReporter, RunnerContainer } from '../src';
 import * as os from 'os';
+import { execSync } from 'child_process';
+import { join } from 'path';
 
 describe('/test/index.test.ts', () => {
   it('test create runner', () => {
@@ -22,4 +24,13 @@ describe('/test/index.test.ts', () => {
     container.registerReport(new ConsoleReporter());
     container.addRule(defaultRule);
   })
+
+  it('should load package from app pkg', () => {
+    const bin = join(__dirname, '../bin/luckyeye');
+    const result = execSync(`${bin}`, {
+      cwd: join(__dirname, './fixtures/base-app')
+    });
+
+    expect(result.toString()).toContain('Midway v2 check');
+  });
 });

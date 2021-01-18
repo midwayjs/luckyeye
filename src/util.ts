@@ -63,20 +63,10 @@ export const color = function (type, str) {
   return '\u001b[' + exports.colors[type] + 'm' + str + '\u001b[0m';
 };
 
-
-/**
- * simple copy
- *
- * @param target
- * @param source
- */
-export const assign = (target, source) => {
-  // clean key
-  for(let key in source) {
-    if(source[key]) {
-      target[key] = source[key];
-    }
+export function getPackageVersion(name): string {
+  try {
+    return require(`${name}/package`).version;
+  } catch(err) {
   }
-
-  return target;
-};
+  return '?';
+}
