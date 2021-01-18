@@ -6,3 +6,4 @@ const { RunnerContainer, ConsoleReporter} = require('../dist/');
 const container = new RunnerContainer();
 container.registerReport(new ConsoleReporter());
 container.loadRulePackage();
+container.run();

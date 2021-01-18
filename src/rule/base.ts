@@ -1,15 +1,30 @@
 import { execSync } from 'child_process';
+import * as os from 'os';
 
 export const baseCheck = (runner) => {
   runner
     .group('Base check')
-    .warn('Check Node.js Version（>=12）', () => {
+    .info('Hostname', () => {
+      return os.hostname;
+    })
+    .info('VM CPU', () => {
+      return os.cpus().length;
+    })
+    .info('USER HOME', () => {
+      return os.homedir();
+    })
+    .info('Node.js Version', () => {
       try {
-        let ver = execSync(`node -v`).toString().trim();
-        const marjorVersion = ver.split('.')[0].replace('v', '');
-        return [parseInt(marjorVersion) < 12, `Node.js version too low`];
+        return execSync(`node -v`).toString().trim();
       } catch (err) {
-        return [false, 'Check error'];
+        return '?';
+      }
+    })
+    .info('NPM Version', () => {
+      try {
+        return execSync(`npm -v`).toString().trim();
+      } catch (err) {
+        return '?';
       }
     });
 };

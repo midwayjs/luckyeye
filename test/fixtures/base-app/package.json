@@ -1,9 +1,17 @@
 {
-  "name":"test",
+  "name": "test",
   "version": "0.0.1",
   "midway-luckyeye": {
     "packages": [
       "midway_v2"
     ]
+  },
+  "dependencies": {
+    "@midwayjs/decorator": "*",
+    "@midwayjs/koa": "*",
+    "@midwayjs/mock": "*"
+  },
+  "devDependencies": {
+    "typescript": "^3.9.0"
   }
 }

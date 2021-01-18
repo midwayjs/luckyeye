@@ -1,39 +1,40 @@
 import queue from 'queue';
 import { EventEmitter } from 'events';
-import { getPackageVersion } from './util';
-
-const q = queue({
-  timeout: 100,
-  concurrency: 1,
-  autostart: true,
-});
+import { getDynamicPackageVersion, getNpmList, getPackageVersion, hasPackage, versionCompare } from './util';
+import { join } from 'path';
+import { types } from 'util';
 
 const SLOW = 75;
-
-const mc = new EventEmitter();
 
 const inner = {
   'base': require('./rule/base'),
   'midway_v2': require('./rule/app'),
-}
+};
 
 export class RunnerContainer {
 
   reporters;
-  ready: boolean;
+  baseDir;
+  queue;
+  mc;
 
-  constructor() {
+  constructor(options?) {
     this.reporters = [];
-    this.ready = false;
+    this.baseDir = options?.baseDir || process.cwd();
+    this.queue = queue({
+      timeout: 100,
+      concurrency: 1,
+      autostart: false,
+    });
+    this.mc = new EventEmitter();
 
-    mc.on('luckyeye:result', (data) => {
+    this.mc.on('luckyeye:result', (data) => {
       for (let reporter of this.reporters) {
         if (data.type === 'group') {
           reporter.reportGroup(data);
         } else if (data.type === 'info') {
           reporter.reportInfo(data);
         } else if (data.type === 'check') {
-          this.ready = true;
           reporter.reportCheck(data);
         } else if (data.type === 'warn') {
           reporter.reportWarn(data);
@@ -45,11 +46,16 @@ export class RunnerContainer {
       }
     });
 
-    q.on('end', () => {
-      if (this.ready) {
-        for (let reporter of this.reporters) {
-          reporter.reportEnd();
-        }
+    this.queue.on('error', (err) => {
+      this.reportError(err);
+    });
+
+    this.queue.on('end', (err) => {
+      if (err) {
+        console.error(err);
+      }
+      for (let reporter of this.reporters) {
+        reporter.reportEnd();
       }
     });
   }
@@ -57,7 +63,7 @@ export class RunnerContainer {
   loadRulePackage() {
     let packages = ['base'];
     try {
-      const pkg = require(`${process.cwd()}/package.json`);
+      const pkg = require(join(this.baseDir, `package.json`));
       packages = packages.concat(pkg['midway-luckyeye']['packages']);
     } catch (err) {
     }
@@ -65,18 +71,18 @@ export class RunnerContainer {
     if (packages.length) {
       for (const p of packages) {
         let ruleModule;
-        if(p.indexOf(':') !== -1) {
+        if (p.indexOf(':') !== -1) {
           // 现在之后 npm
           ruleModule = require(p.split(':')[1]);
-        } else if(inner[p]) {
+        } else if (inner[p]) {
           ruleModule = inner[p];
         }
-  
+
         if (ruleModule['rules']) {
           for (const rule of ruleModule['rules']) {
             this.addRule(rule);
           }
-        } else if(typeof ruleModule === 'function') {
+        } else if (typeof ruleModule === 'function') {
           this.addRule(ruleModule);
         } else {
           console.log('not found rule and skip');
@@ -85,14 +91,50 @@ export class RunnerContainer {
     }
   }
 
+  async run() {
+    return new Promise<void>((resolve, reject) => {
+      this.queue.start((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
   registerReport(reporter) {
     this.reporters.push(reporter);
     reporter.reportStart();
   }
 
   addRule(rule) {
-    rule(new Runner());
+    rule(new Runner(this));
   }
+
+  report(data) {
+    this.mc.emit('luckyeye:result', data);
+  }
+
+  reportError(err) {
+    this.report({
+      type: 'error',
+      message: err.message,
+    });
+  }
+
+  getBaseDir() {
+    return this.baseDir;
+  }
+
+  getQueue() {
+    return this.queue;
+  }
+
+  getMessageCenter() {
+    return this.mc;
+  }
+
 }
 
 function checkAssert(result) {
@@ -113,8 +155,23 @@ export class Runner {
 
   skip = false;
   innerGroup;
+  baseDir;
+  queue;
+  mc;
+  runnerContainer;
   utils = {
+    getDynamicPackageVersion: getDynamicPackageVersion,
     getPackageVersion: getPackageVersion,
+    getNpmList: getNpmList,
+    hasPackage: hasPackage,
+    versionCompare: versionCompare,
+  };
+
+  constructor(runnerContainer) {
+    this.runnerContainer = runnerContainer;
+    this.baseDir = runnerContainer.getBaseDir();
+    this.queue = runnerContainer.getQueue();
+    this.mc = runnerContainer.getMessageCenter();
   }
 
   getGroup() {
@@ -123,8 +180,8 @@ export class Runner {
 
   group(value) {
     this.innerGroup = value;
-    q.push((cb) => {
-      this.report({
+    this.queue.push((cb) => {
+      this.runnerContainer.report({
         type: 'group',
         group: this.innerGroup,
       });
@@ -133,141 +190,93 @@ export class Runner {
     return this;
   }
 
-  info(title, fn) {
-    if (this.skip) {
-      q.push((cb) => {
-        this.report({
+  invoke(title, fn, dataHandler) {
+    this.queue.push(async () => {
+      if (types.isPromise(this.skip)) {
+        this.skip = await this.skip;
+      }
+
+      if (this.skip) {
+        this.runnerContainer.report({
           type: 'skip',
           title,
         });
-        cb();
-      });
-      return this;
-    }
-
-    let startTime = Date.now();
-    q.push(() => {
-      return Promise.resolve(fn()).then((data) => {
-        if(!Array.isArray(data)) {
-          data = [data];
+      } else {
+        let data: any;
+        if (types.isPromise(fn)) {
+          data = await fn;
+        } else if (typeof fn === 'function') {
+          data = await fn();
+        } else {
+          data = fn;
         }
-
-        let test = {
-          type: 'info',
-          group: this.innerGroup,
-          title: title,
-          message: data[0],
-          duration: Date.now() - startTime,
-        };
-
+        let test = dataHandler(data);
         isSlow(test);
-        this.report(test);
-      }).catch((err) => {
-        this.reportError(err);
-      });
+        this.runnerContainer.report(test);
+      }
     });
+  }
 
+  info(title, fn) {
+    let startTime = Date.now();
+    this.invoke(title, fn, (data) => {
+      if (!Array.isArray(data)) {
+        data = [data];
+      }
+
+      return {
+        type: 'info',
+        group: this.innerGroup,
+        title: title,
+        message: data[0],
+        duration: Date.now() - startTime,
+      };
+    });
     return this;
   }
 
   check(title, assertFn) {
-    if (this.skip) {
-      q.push((cb) => {
-        this.report({
-          type: 'skip',
-          title,
-        });
-        cb();
-      });
-      return this;
-    }
-
     let startTime = Date.now();
+    this.invoke(title, assertFn(checkAssert), (data) => {
+      if (!data.length) {
+        data = [data, ''];
+      }
 
-    q.push(() => {
-      return Promise.resolve(assertFn(checkAssert)).then((data) => {
-
-        if(!data.length) {
-          data = [data, ''];
-        }
-
-        let test = {
-          type: 'check',
-          group: this.innerGroup,
-          title: title,
-          message: data[0],
-          result: data[1],
-          duration: Date.now() - startTime,
-        };
-
-        isSlow(test);
-        this.report(test);
-      }).catch((err) => {
-        this.reportError(err);
-      });
+      return {
+        type: 'check',
+        group: this.innerGroup,
+        title: title,
+        message: data[0],
+        result: data[1],
+        duration: Date.now() - startTime,
+      };
     });
-
     return this;
   }
 
   warn(title, assertFn) {
-    if (this.skip) {
-      q.push((cb) => {
-        this.report({
-          type: 'skip',
-          title,
-        });
-        cb();
-      });
-      return this;
-    }
-
     let startTime = Date.now();
+    this.invoke(title, assertFn(checkAssert), (data) => {
+      if (!data.length) {
+        data = [data, ''];
+      }
 
-    q.push(() => {
-      return Promise.resolve(assertFn(checkAssert)).then((data) => {
-
-        if(!Array.isArray(data)) {
-          data = [data, ''];
-        }
-
-        let test = {
-          type: 'warn',
-          group: this.innerGroup,
-          title: title,
-          message: data[0],
-          result: data[1],
-          duration: Date.now() - startTime,
-        };
-
-        isSlow(test);
-        this.report(test);
-      }).catch((err) => {
-        this.reportError(err);
-      });
+      return {
+        type: 'warn',
+        group: this.innerGroup,
+        title: title,
+        message: data[0],
+        result: data[1],
+        duration: Date.now() - startTime,
+      };
     });
 
     return this;
-  }
-
-  report(data) {
-    mc.emit('luckyeye:result', data);
   }
 
   skipWhen(checkFn) {
     this.skip = checkFn();
     return this;
-  }
-
-  reportError(err) {
-    q.push((cb) => {
-      this.report({
-        type: 'error',
-        group: this.innerGroup,
-        message: err.message,
-      });
-      cb();
-    });
   }
 
 }

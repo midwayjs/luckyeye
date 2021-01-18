@@ -23,6 +23,7 @@
     "find-root": "^1.1.0",
     "ms": "^2.1.1",
     "queue": "^6.0.0",
+    "semver": "^7.3.4",
     "supports-color": "^8.1.0"
   },
   "engines": {
