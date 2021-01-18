@@ -146,7 +146,7 @@ export class ConsoleReporter extends Reporter {
           color(test.speed, ' (%dms)');
 
         if(test.type === 'warn' && test.message) {
-          console.log(fmt, `${test.title} => ${test.result || '?'}`);
+          console.log(fmt, `${test.title} => ${test.result || '?'}`, test.duration);
         } else {
           console.log(fmt, `${test.title} => ${test.message || '?'}`, test.duration);
         }
