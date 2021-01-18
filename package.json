@@ -35,5 +35,9 @@
     "@types/node": "^10.17.21",
     "mwts": "^1.0.5",
     "typescript": "^4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/midwayjs/luckyeye.git"
   }
 }

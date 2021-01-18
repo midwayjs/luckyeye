@@ -54,27 +54,20 @@ luckyeye 工具的想法是把检查项分为几个规则组，每个规则组�
 exports.register = (runner) => {
   runner
     .group('基础环境检查')
-    .check('检查是否使用 docker 构建', () => {
+    .skipWhen(() => {
+      // 下面的就不走了
+      return true;
+    })
+    .info('node 版本', () => {
+      // 输出一些信息
+      return 'v12.9.0'
+    })
+    .check('检查文件是否存在', () => {
+      // 检查
       return [fs.existsSync('/home/admin/.image_info'), '未找到信息'];
     })
-    .check('检查磁盘容量', () => {
-      let result = false;
-      return new Promise((resolve) => {
-        df({
-          file: '/',
-        }, function (error, response) {
-          let msg = '';
-          if (error) {
-            msg = '检查磁盘出现错误';
-          } else if(response.length === 0) {
-            msg = '未找到磁盘';
-          } else {
-            result = response[0].capacity < '0.8';
-            msg = `${response[0].capacity * 100}%`;
-          }
-          resolve([result, msg]);
-        });
-      });
+    .warn('警告', async () => {
+      return [true, '输出警告的信息']
     });
 
 };
