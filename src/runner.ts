@@ -2,7 +2,9 @@ import queue from 'queue';
 import { EventEmitter } from 'events';
 import { getDynamicPackageVersion, getNpmList, getPackageVersion, hasPackage, versionCompare } from './util';
 import { join } from 'path';
-import { types } from 'util';
+import { types, debuglog } from 'util';
+
+const debugLogger = debuglog('midway:luckyeye');
 
 const SLOW = 75;
 
@@ -64,12 +66,13 @@ export class RunnerContainer {
     let packages = ['base'];
     try {
       const pkg = require(join(this.baseDir, `package.json`));
-      packages = packages.concat(pkg['midway-luckyeye']['packages']);
+      packages = packages.concat(pkg['midway-luckyeye']['packages'] || []);
     } catch (err) {
     }
 
     if (packages.length) {
       for (const p of packages) {
+        debugLogger(`[middway:luckyeye]: load rule package ${p}`);
         let ruleModule;
         if (p.indexOf(':') !== -1) {
           // 现在之后 npm
