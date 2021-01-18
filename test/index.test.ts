@@ -27,7 +27,7 @@ describe('/test/index.test.ts', () => {
     await container.run();
   })
 
-  it.only('should load package from app pkg', async () => {
+  it('should load package from app pkg', async () => {
 
     const baseDir = join(__dirname, './fixtures/base-app');
     if (!existsSync(join(baseDir, 'node_modules'))) {
