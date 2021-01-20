@@ -32,9 +32,6 @@ export const checkV2 = (runner: Runner) => {
     .info('midway mock version', async () => {
       return [runner.utils.getDynamicPackageVersion('@midwayjs/mock')];
     })
-    .info('midway web version', async () => {
-      return [runner.utils.getDynamicPackageVersion('@midwayjs/web')];
-    })
     .check('Check Node.js Version（>=12）', () => {
       try {
         let ver = execSync(`node -v`).toString().trim();
@@ -70,9 +67,9 @@ export const checkV2 = (runner: Runner) => {
       }
       return [true];
     })
-    .warn('upgrade to ts 4.1', async () => {
-      const version = runner.utils.getPackageVersion(runner.baseDir, 'typescript', true);
-      if (runner.utils.versionCompare(version.replace('^', ''), '4.1.0') === -1) {
+    .warn('upgrade to ts4', async () => {
+      const version = runner.utils.getDynamicPackageVersion('typescript');
+      if (runner.utils.versionCompare(version.replace('^', ''), '4.0.0') === -1) {
         return [true, 'more powerful'];
       }
       return [false];

@@ -15,7 +15,7 @@
   "scripts": {
     "test": "midway-bin test --ts",
     "cov": "midway-bin cov --ts",
-    "build": "midway-bin build -c"
+    "build": "midway-bin build -c && rm -rf dist/.mwcc-cache"
   },
   "author": "czy88840616@gmail.com",
   "license": "MIT",
