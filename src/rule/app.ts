@@ -67,6 +67,15 @@ export const checkV2 = (runner: Runner) => {
       }
       return [true];
     })
+    .check('socket-client version', async () => {
+      if (runner.utils.hasPackage(runner.baseDir, 'socket.io-client', true)) {
+        const version = runner.utils.getDynamicPackageVersion('socket.io-client');
+        if (runner.utils.versionCompare(version.replace('^', ''), '4.0.0') === -1) {
+          return [false];
+        }
+      }
+      return [true];
+    })
     .warn('upgrade to ts4', async () => {
       const version = runner.utils.getDynamicPackageVersion('typescript');
       if (runner.utils.versionCompare(version.replace('^', ''), '4.0.0') === -1) {
