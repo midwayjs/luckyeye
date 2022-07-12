@@ -24,7 +24,7 @@ export class RunnerContainer {
     this.reporters = [];
     this.baseDir = options?.baseDir || process.cwd();
     this.queue = queue({
-      timeout: 100,
+      timeout: 20000,
       concurrency: 1,
       autostart: false,
     });
